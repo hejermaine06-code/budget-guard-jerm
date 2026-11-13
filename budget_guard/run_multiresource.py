@@ -55,7 +55,7 @@ def main(seeds: tuple[int, ...] = (0, 1, 2, 3, 4), alpha: float = DEFAULT_ALPHA,
         defined = sub.notna().all(axis=1)
         acov["joint"] = float(sub[defined].astype(bool).all(axis=1).mean())
         rows.append({"scheme": "agent self-report", "seed": seed, **acov})
-        for scheme in ("independent", "bonferroni", "copula"):
+        for scheme in ("independent", "bonferroni", "copula", "bonferroni-rollout"):
             result = joint_intervals(df, masks, alpha=alpha, scheme=scheme)
             cov = joint_coverage(df, masks["test"], result["intervals"])
             rows.append({"scheme": scheme, "seed": seed, **cov})
@@ -63,6 +63,7 @@ def main(seeds: tuple[int, ...] = (0, 1, 2, 3, 4), alpha: float = DEFAULT_ALPHA,
     table = per_seed.groupby("scheme", sort=False).agg(
         **{c: (c, "mean") for c in list(RESOURCES) + ["joint"]},
         joint_std=("joint", "std"),
+        joint_run=("joint_run", "mean"),
     ).reset_index()
 
     os.makedirs("tables", exist_ok=True)

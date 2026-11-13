@@ -1,0 +1,5 @@
+method,n_runs,mean_ge085,mean_ge090
+split-CQR,19,19,16
+windowed-CQR,19,15,12
+DtACI,19,15,9
+total-minus-spent,19,18,12

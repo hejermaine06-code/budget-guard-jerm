@@ -67,3 +67,14 @@ def test_km_diverges_when_upper_tail_is_censored():
     s_events = np.linspace(0.0, 1.0, 50)
     s_censored = np.full(200, 100.0)
     assert km_upper_qhat(s_events, s_censored, 0.1) == float("inf")
+
+
+def test_corrected_quantile_is_infinite_on_tiny_samples():
+    """Code review #8: too few scores must give +inf, not the largest score."""
+    from budget_guard.censored import _corrected_quantile, gated_upper_qhat, upper_qhat
+
+    assert _corrected_quantile(np.array([1.0, 2.0, 3.0]), 0.1) == np.inf
+    assert _corrected_quantile(np.array([]), 0.1) == np.inf
+    assert gated_upper_qhat(np.arange(5, dtype=float), 0.1) == np.inf
+    assert np.isfinite(_corrected_quantile(np.arange(20, dtype=float), 0.1))
+    assert upper_qhat(np.array([]), np.array([]), 0.1, "drop") == np.inf

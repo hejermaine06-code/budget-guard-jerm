@@ -116,3 +116,29 @@ def test_online_mode_tracks_upward_drift_better_than_frozen():
         return float(np.mean(covered))
 
     assert run_stream(online=True) >= run_stream(online=False)
+
+
+def test_guard_abort_is_run_level_and_rarely_stops_feasible_runs():
+    """The abort uses the run-level lower bound: feasible runs (total <= budget) are
+    stopped at most ~abort_delta of the time, even though every turn is checked."""
+    budget = 1000.0
+    runs = _runs(400, 0, low=80, high=200, nmin=3, nmax=9)
+    guard = BudgetGuard.from_logs(_logs_from_runs(runs, budget=budget), budget=budget,
+                                  online=False, abort_delta=0.10)
+    assert guard.abort_qhat is not None and np.isfinite(guard.abort_qhat)
+    stopped = []
+    for per in _runs(300, 99, low=80, high=200, nmin=3, nmax=9):
+        if per.sum() > budget:
+            continue  # only feasible runs count toward false aborts
+        guard.reset()
+        stopped.append(any(guard.step(t).abort for t in per[:-1]))
+    assert len(stopped) > 50
+    assert float(np.mean(stopped)) <= 0.20
+
+
+def test_guard_without_feasibility_labels_falls_back_to_per_turn_rule():
+    df = _logs_from_runs(_runs(120, 0)).drop(columns=["can_finish"])
+    guard = BudgetGuard.from_logs(df, budget=200.0, online=False)
+    assert guard.abort_qhat is None
+    guard.reset()
+    assert any(guard.step(150.0).abort for _ in range(6))

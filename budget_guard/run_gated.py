@@ -74,6 +74,10 @@ def main(seeds: tuple[int, ...] = (0, 1, 2, 3, 4), outdir: str = "figures"):
                     "gate_catch_doomed": float(np.mean(~keep[te_doomed])) if te_doomed.any() else float("nan"),
                     "false_abort_feasible": float(np.mean(~keep[te & feas_r & ~cens])),
                     "cov_kept_feasible": _cov(reg, qhat, X, y, obs, te & keep & feas_r),
+                    # every admitted prefix, doomed ones included (a live guard cannot
+                    # tell them apart); censored rows use RECOVERED labels, exact for
+                    # time, interpolated (approximate) for capacity and cost
+                    "cov_kept_all": _cov(reg, qhat, X, y, obs, te & keep),
                 })
 
     table = (pd.DataFrame(rows).groupby(["resource", "delta"], sort=False)
@@ -81,6 +85,7 @@ def main(seeds: tuple[int, ...] = (0, 1, 2, 3, 4), outdir: str = "figures"):
                   gate_catch_doomed=("gate_catch_doomed", "mean"),
                   false_abort_feasible=("false_abort_feasible", "mean"),
                   cov_kept_feasible=("cov_kept_feasible", "mean"),
+                  cov_kept_all=("cov_kept_all", "mean"),
                   qhat_median=("qhat", "median")).reset_index())
     os.makedirs("tables", exist_ok=True)
     os.makedirs(outdir, exist_ok=True)

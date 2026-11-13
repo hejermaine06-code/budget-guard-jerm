@@ -335,6 +335,21 @@ def joint_intervals(
     X = build_features(df)
     tr, ca, te = masks["train"], masks["cal"], masks["test"]
 
+    if scheme == "bonferroni-rollout":
+        # Bonferroni with ONE calibration score per rollout (its worst prefix), per
+        # resource at alpha/3: if rollouts are exchangeable, a new rollout is covered
+        # on all three resources at EVERY prefix with probability >= 1 - alpha.
+        from .conformal import cqr_split_rollout
+
+        out = {}
+        g = df["rollout_index"].to_numpy()
+        for res in RESOURCES:
+            y = df[f"y_{res}"].to_numpy(dtype=float)
+            lo, hi, _ = cqr_split_rollout(X[tr], y[tr], X[ca], y[ca], g[ca], X[te],
+                                          alpha=alpha / len(RESOURCES))
+            out[res] = (lo, hi)
+        return {"intervals": out, "per_margin_level": 1 - alpha / len(RESOURCES)}
+
     if scheme in ("independent", "bonferroni"):
         per_margin_alpha = alpha / len(RESOURCES) if scheme == "bonferroni" else alpha
         out = {}
@@ -352,17 +367,12 @@ def joint_intervals(
         cal_scores[res] = _cqr_scores(mlo.predict(X[ca]), mhi.predict(X[ca]), y[ca])
         test_preds[res] = (mlo.predict(X[te]), mhi.predict(X[te]))
 
-    n = int(ca.sum())
     score_mat = np.column_stack([cal_scores[res] for res in RESOURCES])
-    # smallest shared level u whose per-margin u-quantiles jointly cover >= 1-alpha on CAL
-    u_star = 1.0
-    for u in np.linspace(0.90, 1.0, 101):
-        qhats = np.quantile(score_mat, u, axis=0, method="higher")
-        joint_ok = (score_mat <= qhats).all(axis=1).sum()
-        if (joint_ok + 1) / (n + 1) >= 1 - alpha:
-            u_star = float(u)
-            break
-    qhats = np.quantile(score_mat, u_star, axis=0, method="higher")
+    # Same rule as the adaptive copula (``_joint_rank_qhats``): the smallest shared rank
+    # with ceil((n+1)(1-alpha)) CAL vectors jointly inside, +inf when n is too small.
+    # The earlier grid used (joint_ok+1)/(n+1) >= 1-alpha (one point looser) and fell
+    # back to a finite maximum, so the in-distribution and adaptive copulas disagreed.
+    qhats, u_star = _joint_rank_qhats(score_mat, alpha)
     out = {
         res: (np.maximum(test_preds[res][0] - qhats[i], 0.0), test_preds[res][1] + qhats[i])
         for i, res in enumerate(RESOURCES)
@@ -371,7 +381,8 @@ def joint_intervals(
 
 
 def joint_coverage(df: pd.DataFrame, test_mask: np.ndarray, intervals: dict) -> dict:
-    """Per-resource and all-at-once coverage on the test rows."""
+    """Per-resource and all-at-once coverage on the test rows, plus ``joint_run``: the
+    share of test rollouts covered on all resources at EVERY prefix."""
     covered_all = np.ones(int(test_mask.sum()), dtype=bool)
     out = {}
     for res, (lo, hi) in intervals.items():
@@ -380,4 +391,6 @@ def joint_coverage(df: pd.DataFrame, test_mask: np.ndarray, intervals: dict) -> 
         out[res] = float(covered.mean())
         covered_all &= covered
     out["joint"] = float(covered_all.mean())
+    per_run = pd.Series(covered_all).groupby(df.loc[test_mask, "rollout_index"].to_numpy()).all()
+    out["joint_run"] = float(per_run.mean())
     return out

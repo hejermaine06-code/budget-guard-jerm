@@ -66,7 +66,7 @@ def run(env: str = "sokoban", seeds: tuple[int, ...] = (0, 1, 2, 3, 4)):
     budget = float(ENVS[env]["max_ctx"])
     cap_grid = np.quantile(df["total_rollout_tokens"].unique(), [0.2, 0.35, 0.5, 0.65, 0.8])
 
-    guard_rows, combined_rows, cap_rows = [], [], []
+    guard_rows, half_rows, combined_rows, cap_rows = [], [], [], []
     for seed in seeds:
         masks = group_split(df, seed=seed)
         tr, ca, te = masks["train"], masks["cal"], masks["test"]
@@ -81,6 +81,10 @@ def run(env: str = "sokoban", seeds: tuple[int, ...] = (0, 1, 2, 3, 4)):
                                **evaluate_stopping(df[te], s_te, tau)})
             # combined rule: split the false-abort budget across the two triggers
             tau2 = calibrate_threshold(df[ca], s_cal, delta / 2)
+            # same gate at delta/2 with NO interval trigger: separates "stricter gate"
+            # from "added interval trigger" in the combined rule's savings drop
+            half_rows.append({"seed": seed, "delta": delta,
+                              **evaluate_stopping(df[te], s_te, tau2)})
             qhat = calibrate_lower_bound(df[ca], pred_cal, delta / 2)
             combined_rows.append({"seed": seed, "delta": delta,
                                   **evaluate_interval_stopping(
@@ -95,6 +99,7 @@ def run(env: str = "sokoban", seeds: tuple[int, ...] = (0, 1, 2, 3, 4)):
                      doomed_savings_frac=("doomed_savings_frac", "mean")).reset_index())
 
     guard = _agg(guard_rows)
+    half = _agg(half_rows)
     combined = _agg(combined_rows)
     caps = (pd.DataFrame(cap_rows).groupby("cap_tokens", sort=True)
             .agg(false_abort_rate=("false_abort_rate", "mean"),
@@ -103,9 +108,10 @@ def run(env: str = "sokoban", seeds: tuple[int, ...] = (0, 1, 2, 3, 4)):
     os.makedirs("tables", exist_ok=True)
     os.makedirs("figures", exist_ok=True)
     guard["rule"] = "guard (feasibility)"
+    half["rule"] = "guard (feasibility at delta/2)"
     combined["rule"] = "guard (feasibility+interval)"
     caps["rule"] = "hard cap"
-    pd.concat([guard, combined, caps], ignore_index=True).to_csv(
+    pd.concat([guard, half, combined, caps], ignore_index=True).to_csv(
         f"tables/abort_frontier_{env}.csv", index=False)
 
     import matplotlib
@@ -142,6 +148,7 @@ def run(env: str = "sokoban", seeds: tuple[int, ...] = (0, 1, 2, 3, 4)):
     fig.savefig(f"figures/abort_frontier_{env}.png", dpi=200)
 
     print("guard (feasibility):\n" + guard.to_string(index=False))
+    print("\nguard (feasibility at delta/2, no interval):\n" + half.to_string(index=False))
     print("\nguard (feasibility+interval):\n" + combined.to_string(index=False))
     print("\nhard caps:\n" + caps.to_string(index=False))
     print(f"\nwrote figures/abort_frontier_{env}.png, tables/abort_frontier_{env}.csv")

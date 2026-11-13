@@ -21,8 +21,10 @@ from .conformal import (
     aci_cqr,
     constant_quantile,
     cqr_split,
+    cqr_split_rollout,
     dtaci,
     split_conformal_absres,
+    total_minus_spent,
     tune_gamma,
     windowed_cqr,
 )
@@ -36,6 +38,7 @@ from .metrics import (
     normalized_width,
     pooled_bootstrap_ci,
     rollout_bootstrap_draws,
+    rollout_coverage,
 )
 from .plotting import (
     UNBOUNDED_NOTE,
@@ -76,8 +79,17 @@ def run_env(env: str, seed: int = 0, alpha: float = DEFAULT_ALPHA) -> list[dict]
 
     intervals = {}
     intervals["constant-quantile"] = constant_quantile(yca, len(yte), alpha=alpha)[:2]
+    # No-learning arithmetic baseline reviewers asked for. Not in METHOD_COLORS,
+    # so the headline figure is unchanged; table rows only.
+    spent = X["tokens_so_far"].to_numpy(dtype=float)
+    intervals["total-minus-spent"] = total_minus_spent(
+        spent[tr], ytr, groups[tr], spent[ca], yca, spent[te], alpha=alpha)[:2]
     intervals["split-absres"] = split_conformal_absres(Xtr, ytr, Xca, yca, Xte, alpha=alpha)[:2]
     intervals["split-CQR"] = cqr_split(Xtr, ytr, Xca, yca, Xte, alpha=alpha)[:2]
+    # One score per calibration rollout (its worst prefix): the guaranteed object.
+    # Not in METHOD_COLORS, so the headline figure is unchanged; table rows only.
+    intervals["rollout-CQR"] = cqr_split_rollout(
+        Xtr, ytr, Xca, yca, groups[ca], Xte, alpha=alpha)[:2]
     gte = groups[te]  # rollout-safe revelation: labels enter only at rollout boundaries
     intervals["ACI-CQR"] = aci_cqr(Xtr, ytr, Xca, yca, Xte, yte, alpha=alpha, gamma=gamma, groups=gte)[:2]
     intervals["windowed-CQR"] = windowed_cqr(Xtr, ytr, Xca, yca, Xte, yte, alpha=alpha, groups=gte)[:2]
@@ -100,6 +112,7 @@ def run_env(env: str, seed: int = 0, alpha: float = DEFAULT_ALPHA) -> list[dict]
              "cov_ci90_lo": np.nan, "cov_ci90_hi": np.nan,
              "median_width": np.nan, "normalized_width": np.nan,
              "frac_unbounded": np.nan, "n_test": np.nan, "gamma": np.nan,
+             "run_coverage": np.nan,
              "_draws": np.empty(0)}
         )
     for name, (lo, hi) in intervals.items():
@@ -118,6 +131,8 @@ def run_env(env: str, seed: int = 0, alpha: float = DEFAULT_ALPHA) -> list[dict]
                 "frac_unbounded": frac_unbounded(hi),
                 "n_test": int(te.sum()),
                 "gamma": gamma if name == "ACI-CQR" else np.nan,
+                # share of test rollouts covered at EVERY prefix
+                "run_coverage": rollout_coverage(yte, lo, hi, groups[te]),
             }
         )
     return rows
@@ -141,6 +156,7 @@ def main(seeds: tuple[int, ...] = (0, 1, 2, 3, 4), alpha: float = DEFAULT_ALPHA)
             normalized_width=("normalized_width", "mean"),
             frac_unbounded=("frac_unbounded", "mean"),
             n_test=("n_test", "mean"),
+            run_coverage=("run_coverage", "mean"),
         )
         .reset_index()
     )

@@ -1,0 +1,19 @@
+setting,target,method,coverage,run_coverage,normalized_width,frac_unbounded
+within-run,sokoban,windowed-CQR (100 prefixes),0.9155126232641265,0.8533333333333333,0.8581735526133908,0.0
+within-run,sokoban,windowed-CQR (25 runs),0.9106824323404364,0.8400000000000001,0.910337566620818,0.0
+within-run,searchr1,windowed-CQR (100 prefixes),0.9195641025641026,0.8941176470588236,1.1035631418597622,0.0
+within-run,searchr1,windowed-CQR (25 runs),0.9195641025641026,0.8941176470588236,1.1194870195588966,0.0
+within-run,swebench,windowed-CQR (100 prefixes),0.8740295594105139,0.8,1.2903229905594373,0.0
+within-run,swebench,windowed-CQR (25 runs),0.9428949604485105,0.9125,2.012160370530385,0.0
+cross-env from sokoban,searchr1,windowed-CQR (100 prefixes),0.710344827586207,0.7272727272727273,1.7615734974203636,0.0
+cross-env from sokoban,searchr1,windowed-CQR (25 runs),0.8206896551724139,0.8181818181818181,1.8716485953704,0.0
+cross-env from sokoban,swebench,windowed-CQR (100 prefixes),0.7983146067415731,0.8125,0.7310511842961835,0.0
+cross-env from sokoban,swebench,windowed-CQR (25 runs),0.8132022471910112,0.859375,1.445330187695162,0.0
+model swap (SWE-bench),claude-sonnet4.6,windowed-CQR (100 prefixes),0.7171701112877583,0.75625,0.20485680925930555,0.0
+model swap (SWE-bench),claude-sonnet4.6,windowed-CQR (25 runs),0.8494435612082671,0.859375,1.0710909166574734,0.0
+model swap (SWE-bench),gemini3.1,windowed-CQR (100 prefixes),0.6573270305113881,0.64375,0.42905534378781524,0.0
+model swap (SWE-bench),gemini3.1,windowed-CQR (25 runs),0.847958745165449,0.853125,0.9064820218057111,0.0
+model swap (SWE-bench),gpt5.2instant,windowed-CQR (100 prefixes),0.8895658796648895,0.61875,1.106461673589841,0.0
+model swap (SWE-bench),gpt5.2instant,windowed-CQR (25 runs),0.8781416603198782,0.584375,1.0872844782258286,0.0
+model swap (SWE-bench),qwen3-235b,windowed-CQR (100 prefixes),0.6599730820995962,0.47333333333333333,0.5235304750961596,0.0
+model swap (SWE-bench),qwen3-235b,windowed-CQR (25 runs),0.8140511440107672,0.72,0.7226117951199826,0.0

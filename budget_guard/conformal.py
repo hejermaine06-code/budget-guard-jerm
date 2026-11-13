@@ -131,6 +131,34 @@ def cqr_split(X_train, y_train, X_cal, y_cal, X_test, alpha=DEFAULT_ALPHA):
     return _clip_nonneg(lo), hi, {"qhat": qhat}
 
 
+def cqr_split_rollout(X_train, y_train, X_cal, y_cal, groups_cal, X_test, alpha=DEFAULT_ALPHA):
+    """Rollout-level split-CQR: ONE calibration score per rollout (its worst prefix).
+
+    ``cqr_split`` pools every calibration prefix into one quantile, but prefixes of
+    one rollout share a final total and are dependent, so the pooled quantile is not
+    the object the finite-sample guarantee is about. Here each calibration rollout
+    contributes only its MAX CQR score. If rollouts are exchangeable, then with
+    probability >= 1-alpha a new rollout's intervals contain y at EVERY one of its
+    prefixes (simultaneous within-run coverage; cf. Dunn, Wasserman & Ramdas 2023,
+    two-layer hierarchical conformal). Same construction as
+    ``economic.calibrate_lower_bound``. Wider than pooled split-CQR by design; with
+    fewer than ceil(1/alpha) - 1 calibration rollouts qhat is +inf (fail-safe).
+    """
+    groups_cal = np.asarray(groups_cal)
+    y_cal = np.asarray(y_cal, dtype=float)
+    if len(groups_cal) != len(y_cal):
+        raise ValueError("groups_cal must have one rollout id per calibration row")
+    mlo, mhi = _fit_cqr(X_train, y_train, alpha)
+    scores = _cqr_scores(mlo.predict(X_cal), mhi.predict(X_cal), y_cal)
+    rollout_ids, inverse = np.unique(groups_cal, return_inverse=True)
+    rollout_max = np.full(len(rollout_ids), -np.inf)
+    np.maximum.at(rollout_max, inverse, scores)
+    qhat = _finite_sample_quantile(rollout_max, alpha)
+    lo = mlo.predict(X_test) - qhat
+    hi = mhi.predict(X_test) + qhat
+    return _clip_nonneg(lo), hi, {"qhat": qhat, "n_cal_rollouts": len(rollout_ids)}
+
+
 def aci_cqr(
     X_train, y_train, X_cal, y_cal, X_test, y_test,
     alpha=DEFAULT_ALPHA, gamma: float = 0.01,
@@ -278,6 +306,74 @@ def constant_quantile(y_cal, n_test: int, alpha=DEFAULT_ALPHA):
     lo = float(np.quantile(y_cal, alpha / 2))
     hi = float(np.quantile(y_cal, 1 - alpha / 2))
     return np.full(n_test, max(lo, 0.0)), np.full(n_test, hi), {}
+
+
+def windowed_cqr_runs(
+    X_train, y_train, X_cal, y_cal, X_test, y_test, groups_cal, groups_test,
+    alpha=DEFAULT_ALPHA, window_runs: int = 25,
+):
+    """windowed-CQR with a window of the last ``window_runs`` FINISHED ROLLOUTS.
+
+    ``windowed_cqr`` keeps the last 100 prefix scores, so a long run (about 62 prefixes
+    for Qwen on SWE-bench) fills most of the window by itself and the cutoff is set by
+    one or two runs; its warm start is also the last 100 calibration rows in table
+    order. Here the window holds whole rollouts: warm-started from the last
+    ``window_runs`` calibration rollouts, and each finished test rollout enters as one
+    block (rollout-safe: labels only after the rollout ends). The quantile is still
+    read from the pooled scores inside the window. Reported beside, not instead of,
+    the paper's windowed-CQR.
+    """
+    mlo, mhi = _fit_cqr(X_train, y_train, alpha)
+    cal_scores = _cqr_scores(mlo.predict(X_cal), mhi.predict(X_cal), np.asarray(y_cal, dtype=float))
+    groups_cal = np.asarray(groups_cal)
+    order = list(dict.fromkeys(groups_cal.tolist()))
+    runs = deque((cal_scores[groups_cal == g] for g in order), maxlen=window_runs)
+
+    groups_test = np.asarray(groups_test)
+    _require_contiguous_groups(groups_test)
+    qlo_test, qhi_test = mlo.predict(X_test), mhi.predict(X_test)
+    test_scores = _cqr_scores(qlo_test, qhi_test, np.asarray(y_test, dtype=float))
+    lo = np.empty(len(test_scores))
+    hi = np.empty(len(test_scores))
+    for g in dict.fromkeys(groups_test.tolist()):
+        idx = np.flatnonzero(groups_test == g)
+        pooled = np.concatenate(list(runs)) if runs else np.empty(0)
+        qhat = _finite_sample_quantile(pooled, alpha)
+        lo[idx] = qlo_test[idx] - qhat
+        hi[idx] = qhi_test[idx] + qhat
+        runs.append(test_scores[idx])  # the rollout has finished: its labels are real
+    return _clip_nonneg(lo), hi, {"window_runs": window_runs}
+
+
+def total_minus_spent(spent_train, y_train, groups_train, spent_cal, y_cal, spent_test,
+                      alpha=DEFAULT_ALPHA):
+    """No-learning arithmetic baseline: "a calibrated total, minus what's spent so far".
+
+    Reviewers (2NSH, Hut2, V41W, Kz1h, nwZq) asked whether the learned features earn
+    their place against this rule. It takes the [alpha/2, 1-alpha/2] quantiles of
+    run TOTALS on the train split (one total per rollout, so long runs are not
+    over-counted), subtracts spend so far, then conformalizes on the calibration
+    split exactly like split-CQR (pooled, finite-sample corrected) so the comparison
+    is apples to apples. Unlike ``constant_quantile`` it uses spend so far; unlike
+    split-CQR it learns nothing. Once a run has spent past the typical total, its
+    upper end can fall to 0: that is the rule's real weakness, not a bug.
+    """
+    spent_train = np.asarray(spent_train, dtype=float)
+    y_train = np.asarray(y_train, dtype=float)
+    groups_train = np.asarray(groups_train)
+    _, first = np.unique(groups_train, return_index=True)
+    totals = spent_train[first] + y_train[first]          # remaining = total - spent
+    t_lo = float(np.quantile(totals, alpha / 2))
+    t_hi = float(np.quantile(totals, 1 - alpha / 2))
+
+    spent_cal = np.asarray(spent_cal, dtype=float)
+    scores = _cqr_scores(t_lo - spent_cal, t_hi - spent_cal, np.asarray(y_cal, dtype=float))
+    qhat = _finite_sample_quantile(scores, alpha)
+
+    spent_test = np.asarray(spent_test, dtype=float)
+    lo = _clip_nonneg(t_lo - spent_test - qhat)
+    hi = np.maximum(t_hi - spent_test + qhat, lo)  # never below lo (or below 0)
+    return lo, hi, {"qhat": qhat, "total_lo": t_lo, "total_hi": t_hi}
 
 
 def dtaci(

@@ -67,19 +67,13 @@ def upper_qhat(
     """
     s_unc = np.asarray(scores_uncensored, dtype=float)
     s_cens = np.asarray(censored_lower_bounds, dtype=float)
-    n = len(s_unc) + len(s_cens)
-    level = min(1.0, np.ceil((n + 1) * (1 - alpha)) / max(n, 1))
 
     if method == "drop":
-        n_u = len(s_unc)
-        lvl = min(1.0, np.ceil((n_u + 1) * (1 - alpha)) / max(n_u, 1))
-        return float(np.quantile(s_unc, lvl, method="higher"))
+        return _corrected_quantile(s_unc, alpha)
     if method == "infinity":
-        pooled = np.concatenate([s_unc, np.full(len(s_cens), np.inf)])
-        return float(np.quantile(pooled, level, method="higher"))
+        return _corrected_quantile(np.concatenate([s_unc, np.full(len(s_cens), np.inf)]), alpha)
     if method == "bound":
-        pooled = np.concatenate([s_unc, s_cens])
-        return float(np.quantile(pooled, level, method="higher"))
+        return _corrected_quantile(np.concatenate([s_unc, s_cens]), alpha)
     if method == "ipcw":
         assert p_uncensored is not None
         w = 1.0 / np.clip(np.asarray(p_uncensored, dtype=float), 0.05, 1.0)
@@ -93,10 +87,7 @@ def upper_qhat(
             if censored_binding is None
             else np.asarray(censored_binding, dtype=bool)
         )
-        pooled = np.concatenate([s_unc, s_cens[binding]])
-        m = len(pooled)
-        lvl = min(1.0, np.ceil((m + 1) * (1 - alpha)) / max(m, 1))
-        return float(np.quantile(pooled, lvl, method="higher"))
+        return _corrected_quantile(np.concatenate([s_unc, s_cens[binding]]), alpha)
     if method == "km":
         binding = (
             np.ones(len(s_cens), dtype=bool)
@@ -105,6 +96,23 @@ def upper_qhat(
         )
         return km_upper_qhat(s_unc, s_cens[binding], alpha)
     raise ValueError(method)
+
+
+def _corrected_quantile(scores: np.ndarray, alpha: float) -> float:
+    """(n+1)-corrected conformal quantile; +inf when there are too few scores.
+
+    Previously each treatment clamped the level with ``min(1.0, ...)``, which silently
+    returned the LARGEST score (a finite, invalid bound) on small samples, and ``drop``
+    crashed on zero uncensored scores. This matches ``conformal._finite_sample_quantile``.
+    """
+    s = np.asarray(scores, dtype=float)
+    n = len(s)
+    if n == 0:
+        return float("inf")
+    level = np.ceil((n + 1) * (1 - alpha)) / n
+    if level > 1.0:
+        return float("inf")
+    return float(np.quantile(s, level, method="higher"))
 
 
 def gated_upper_qhat(scores_kept: np.ndarray, alpha: float) -> float:
@@ -117,12 +125,7 @@ def gated_upper_qhat(scores_kept: np.ndarray, alpha: float) -> float:
     y − pred is observed and exchangeability is ~restored; ``hi = pred + qhat`` covers
     y at 1 − alpha **conditional on the run passing the gate** (selective coverage).
     """
-    s = np.asarray(scores_kept, dtype=float)
-    n = len(s)
-    if n == 0:
-        return float("inf")
-    lvl = min(1.0, np.ceil((n + 1) * (1 - alpha)) / n)
-    return float(np.quantile(s, lvl, method="higher"))
+    return _corrected_quantile(np.asarray(scores_kept, dtype=float), alpha)
 
 
 def km_upper_qhat(

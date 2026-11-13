@@ -27,6 +27,21 @@ conformity-score window is warm-started from CAL and updated once per FINISHED r
 is fixed within a run and tracks drift across runs — exactly the deployment setting.
 Set ``online=False`` for the static split-CQR baseline (frozen CAL quantile).
 
+Abort semantics (changed for the camera-ready, to match the paper): the paper's
+finding is that the per-turn interval is a measurement, not a stop signal, and a rule
+that checks ``spent + lo > budget`` with the alpha-level ``lo`` every turn has no
+per-run false-abort bound (the per-turn chances add up). ``step.abort`` therefore
+uses a separately calibrated RUN-LEVEL lower bound: a point prediction minus a margin
+set from each feasible calibration run's WORST over-prediction
+(``economic.calibrate_lower_bound``), so P(abort a run that would have finished within
+budget) <= ``abort_delta`` when runs are exchangeable. It needs ``can_finish`` in the
+logs; without it the guard falls back to the old per-turn rule (no per-run bound).
+
+Known limitation of online mode: :meth:`observe` only learns from runs that finished
+naturally, so stopped (doomed) runs never enter the window. The paper's censoring
+results show that dropping such runs under-covers the expensive failures, so a guard
+that aborts often may drift toward intervals that are too narrow over time.
+
 ``step`` expects the turn's **history-excluded** total tokens — the same
 ``turn_excluding_history`` accounting the extractor calibrated on (see
 ``data_dictionary.md``). Feature construction reuses ``features.build_xy`` verbatim,
@@ -46,6 +61,7 @@ from .conformal import (
     _fit_cqr,
     _finite_sample_quantile,
 )
+from .economic import calibrate_lower_bound, fit_remaining_regressor
 from .features import build_xy
 from .split import group_split
 
@@ -58,7 +74,7 @@ class GuardStep:
     spent: float  # cumulative budget spent through turn k
     lo: float  # calibrated lower bound on remaining budget (>= 0)
     hi: float  # calibrated upper bound on remaining budget (may be +inf)
-    abort: bool  # True iff even the optimistic spend would exceed the budget
+    abort: bool  # True iff spent + the RUN-LEVEL calibrated lower bound exceeds the budget
 
     @property
     def projected_total_lo(self) -> float:
@@ -84,9 +100,13 @@ class BudgetGuard:
         alpha: float = DEFAULT_ALPHA,
         window: int = 100,
         online: bool = True,
+        point_model=None,
+        abort_qhat: float | None = None,
     ):
         self._mlo = mlo
         self._mhi = mhi
+        self._point = point_model
+        self.abort_qhat = abort_qhat
         self.budget = budget
         self.alpha = alpha
         self.online = online
@@ -108,6 +128,7 @@ class BudgetGuard:
         train_frac: float = 0.5,
         seed: int = 0,
         online: bool = True,
+        abort_delta: float = 0.10,
     ) -> "BudgetGuard":
         """Fit the CQR band on TRAIN rollouts and cache CAL conformity scores.
 
@@ -120,9 +141,15 @@ class BudgetGuard:
         tr, ca = masks["train"], masks["cal"]
         mlo, mhi = _fit_cqr(X[tr], y[tr], alpha)
         cal_scores = _cqr_scores(mlo.predict(X[ca]), mhi.predict(X[ca]), y[ca])
+        point, abort_qhat = None, None
+        if "can_finish" in df.columns:
+            # run-level abort bound: false aborts <= abort_delta per feasible run
+            point = fit_remaining_regressor(X[tr], y[tr])
+            abort_qhat = calibrate_lower_bound(df[ca], point.predict(X[ca]), abort_delta)
         return cls(
             mlo, mhi, cal_scores,
             budget=budget, alpha=alpha, window=window, online=online,
+            point_model=point, abort_qhat=abort_qhat,
         )
 
     # -- live monitoring ------------------------------------------------------
@@ -143,14 +170,22 @@ class BudgetGuard:
         lo = max(qlo - qhat, 0.0) if np.isfinite(qhat) else 0.0
         hi = qhi + qhat
         spent = float(sum(self._per_turn))
-        abort = self.budget is not None and (spent + lo > self.budget)
+        if self.budget is None:
+            abort = False
+        elif self._point is not None and self.abort_qhat is not None:
+            lo_run = max(float(self._point.predict(X_row)[0]) - self.abort_qhat, 0.0)
+            abort = spent + lo_run > self.budget
+        else:  # legacy per-turn rule (no per-run false-abort bound)
+            abort = spent + lo > self.budget
         return GuardStep(k=len(self._per_turn), spent=spent, lo=lo, hi=hi, abort=abort)
 
     def observe(self, per_turn_totals: list[float] | None = None) -> int:
         """Fold a finished run's labels into the online window; return #scores added.
 
         Call only for runs that completed naturally (an aborted run's total is not a
-        valid completion label). With no argument, uses the turns fed via
+        valid completion label). Consequence: stopped runs never inform the window, so
+        under frequent aborts the online intervals can drift too narrow (see the module
+        docstring). With no argument, uses the turns fed via
         :meth:`step`. A no-op when ``online=False``.
         """
         if not self.online:

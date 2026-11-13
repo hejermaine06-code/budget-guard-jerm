@@ -1,0 +1,91 @@
+setting,target,seed,method,coverage,run_coverage,normalized_width,frac_unbounded
+within-run,sokoban,0,windowed-CQR (100 prefixes),0.9,0.8333333333333334,0.8600615836035037,0.0
+within-run,sokoban,0,windowed-CQR (25 runs),0.9,0.8333333333333334,0.9611580167863298,0.0
+within-run,searchr1,0,windowed-CQR (100 prefixes),1.0,1.0,1.1284145180202183,0.0
+within-run,searchr1,0,windowed-CQR (25 runs),1.0,1.0,1.1284145180202183,0.0
+within-run,swebench,0,windowed-CQR (100 prefixes),0.9185185185185185,0.8125,1.7095964642786543,0.0
+within-run,swebench,0,windowed-CQR (25 runs),0.9703703703703703,0.875,1.9025115163343451,0.0
+cross-env from sokoban,searchr1,0,windowed-CQR (100 prefixes),0.7126436781609196,0.7272727272727273,1.7574563463206019,0.0
+cross-env from sokoban,searchr1,0,windowed-CQR (25 runs),0.8045977011494253,0.803030303030303,1.8725604638062745,0.0
+cross-env from sokoban,swebench,0,windowed-CQR (100 prefixes),0.7991573033707865,0.8125,0.7317517030379821,0.0
+cross-env from sokoban,swebench,0,windowed-CQR (25 runs),0.8117977528089888,0.859375,1.443222876286367,0.0
+within-run,sokoban,1,windowed-CQR (100 prefixes),0.9397590361445783,0.8666666666666667,0.8785784667525137,0.0
+within-run,sokoban,1,windowed-CQR (25 runs),0.9397590361445783,0.8666666666666667,0.8676962713753537,0.0
+within-run,searchr1,1,windowed-CQR (100 prefixes),1.0,1.0,1.1698472520607603,0.0
+within-run,searchr1,1,windowed-CQR (25 runs),1.0,1.0,1.2432418469384954,0.0
+within-run,swebench,1,windowed-CQR (100 prefixes),0.948905109489051,0.875,1.6831629520538962,0.0
+within-run,swebench,1,windowed-CQR (25 runs),0.9781021897810219,0.875,2.9753248417084186,0.0
+cross-env from sokoban,searchr1,1,windowed-CQR (100 prefixes),0.7126436781609196,0.7272727272727273,1.7653640537415995,0.0
+cross-env from sokoban,searchr1,1,windowed-CQR (25 runs),0.8275862068965517,0.8181818181818182,1.8789381925511048,0.0
+cross-env from sokoban,swebench,1,windowed-CQR (100 prefixes),0.7963483146067416,0.8125,0.7280757380538142,0.0
+cross-env from sokoban,swebench,1,windowed-CQR (25 runs),0.8146067415730337,0.859375,1.452835053108239,0.0
+within-run,sokoban,2,windowed-CQR (100 prefixes),0.8953488372093024,0.8,0.8893915857226713,0.0
+within-run,sokoban,2,windowed-CQR (25 runs),0.872093023255814,0.7666666666666667,0.8886030287705384,0.0
+within-run,searchr1,2,windowed-CQR (100 prefixes),0.8461538461538461,0.7647058823529411,1.0033884173056309,0.0
+within-run,searchr1,2,windowed-CQR (25 runs),0.8461538461538461,0.7647058823529411,1.0137961289208022,0.0
+within-run,swebench,2,windowed-CQR (100 prefixes),0.8827586206896552,0.875,1.1971073767823093,0.0
+within-run,swebench,2,windowed-CQR (25 runs),1.0,1.0,2.562523259956624,0.0
+cross-env from sokoban,searchr1,2,windowed-CQR (100 prefixes),0.7126436781609196,0.7272727272727273,1.7568345637359186,0.0
+cross-env from sokoban,searchr1,2,windowed-CQR (25 runs),0.8390804597701149,0.8333333333333334,1.8642398451816942,0.0
+cross-env from sokoban,swebench,2,windowed-CQR (100 prefixes),0.800561797752809,0.8125,0.7302489777415138,0.0
+cross-env from sokoban,swebench,2,windowed-CQR (25 runs),0.8146067415730337,0.859375,1.4430338098434006,0.0
+within-run,sokoban,3,windowed-CQR (100 prefixes),0.9294117647058824,0.9,0.8418673293617618,0.0
+within-run,sokoban,3,windowed-CQR (25 runs),0.9176470588235294,0.8666666666666667,0.9680265616000281,0.0
+within-run,searchr1,3,windowed-CQR (100 prefixes),0.7916666666666666,0.7647058823529411,1.0676588162767853,0.0
+within-run,searchr1,3,windowed-CQR (25 runs),0.7916666666666666,0.7647058823529411,1.0676588162767853,0.0
+within-run,swebench,3,windowed-CQR (100 prefixes),0.8802395209580839,0.75,1.3901103033136053,0.0
+within-run,swebench,3,windowed-CQR (25 runs),0.9760479041916168,0.875,1.6450882652991938,0.0
+cross-env from sokoban,searchr1,3,windowed-CQR (100 prefixes),0.7126436781609196,0.7272727272727273,1.7551071250622818,0.0
+cross-env from sokoban,searchr1,3,windowed-CQR (25 runs),0.8160919540229885,0.8181818181818182,1.8734212665436203,0.0
+cross-env from sokoban,swebench,3,windowed-CQR (100 prefixes),0.797752808988764,0.8125,0.7320945254254845,0.0
+cross-env from sokoban,swebench,3,windowed-CQR (25 runs),0.8132022471910112,0.859375,1.4432454489490518,0.0
+within-run,sokoban,4,windowed-CQR (100 prefixes),0.9130434782608695,0.8666666666666667,0.8209687976265037,0.0
+within-run,sokoban,4,windowed-CQR (25 runs),0.9239130434782609,0.8666666666666667,0.8662039545718395,0.0
+within-run,searchr1,4,windowed-CQR (100 prefixes),0.96,0.9411764705882353,1.1485067056354163,0.0
+within-run,searchr1,4,windowed-CQR (25 runs),0.96,0.9411764705882353,1.1443237876381822,0.0
+within-run,swebench,4,windowed-CQR (100 prefixes),0.7397260273972602,0.6875,0.4716378563687223,0.0
+within-run,swebench,4,windowed-CQR (25 runs),0.7899543378995434,0.9375,0.9753539693533442,0.0
+cross-env from sokoban,searchr1,4,windowed-CQR (100 prefixes),0.7011494252873564,0.7272727272727273,1.7731053982414167,0.0
+cross-env from sokoban,searchr1,4,windowed-CQR (25 runs),0.8160919540229885,0.8181818181818182,1.8690832087693072,0.0
+cross-env from sokoban,swebench,4,windowed-CQR (100 prefixes),0.797752808988764,0.8125,0.7330849772221231,0.0
+cross-env from sokoban,swebench,4,windowed-CQR (25 runs),0.8117977528089888,0.859375,1.4443137502887515,0.0
+model swap (SWE-bench),claude-sonnet4.6,0,windowed-CQR (100 prefixes),0.7241653418124007,0.65625,0.20216039599033225,0.0
+model swap (SWE-bench),claude-sonnet4.6,0,windowed-CQR (25 runs),0.848966613672496,0.8125,1.030091037314302,0.0
+model swap (SWE-bench),gemini3.1,0,windowed-CQR (100 prefixes),0.6609368285345939,0.609375,0.4300712267363776,0.0
+model swap (SWE-bench),gemini3.1,0,windowed-CQR (25 runs),0.8298238074774388,0.84375,0.8248355357533209,0.0
+model swap (SWE-bench),gpt5.2instant,0,windowed-CQR (100 prefixes),0.8888042650418888,0.59375,1.1123056890976393,0.0
+model swap (SWE-bench),gpt5.2instant,0,windowed-CQR (25 runs),0.8651942117288652,0.484375,1.056281542326999,0.0
+model swap (SWE-bench),qwen3-235b,0,windowed-CQR (100 prefixes),0.6659488559892328,0.4166666666666667,0.5384791075800175,0.0
+model swap (SWE-bench),qwen3-235b,0,windowed-CQR (25 runs),0.8051144010767161,0.7,0.7307046478233928,0.0
+model swap (SWE-bench),claude-sonnet4.6,1,windowed-CQR (100 prefixes),0.7217806041335453,0.84375,0.24094754724537862,0.0
+model swap (SWE-bench),claude-sonnet4.6,1,windowed-CQR (25 runs),0.8521462639109698,0.890625,1.116171754226025,0.0
+model swap (SWE-bench),gemini3.1,1,windowed-CQR (100 prefixes),0.6467554791577138,0.734375,0.4140775777234009,0.0
+model swap (SWE-bench),gemini3.1,1,windowed-CQR (25 runs),0.8543188654920498,0.859375,0.9120409555742711,0.0
+model swap (SWE-bench),gpt5.2instant,1,windowed-CQR (100 prefixes),0.8895658796648895,0.6875,1.0076652001669766,0.0
+model swap (SWE-bench),gpt5.2instant,1,windowed-CQR (25 runs),0.8865194211728865,0.703125,1.0207140012093119,0.0
+model swap (SWE-bench),qwen3-235b,1,windowed-CQR (100 prefixes),0.6422611036339165,0.5666666666666667,0.4835373192766733,0.0
+model swap (SWE-bench),qwen3-235b,1,windowed-CQR (25 runs),0.8193808882907133,0.7666666666666667,0.6992743609517719,0.0
+model swap (SWE-bench),claude-sonnet4.6,2,windowed-CQR (100 prefixes),0.7289348171701113,0.75,0.20364830348358365,0.0
+model swap (SWE-bench),claude-sonnet4.6,2,windowed-CQR (25 runs),0.8513513513513513,0.84375,1.069280053489144,0.0
+model swap (SWE-bench),gemini3.1,2,windowed-CQR (100 prefixes),0.6570691877954448,0.671875,0.435434903439262,0.0
+model swap (SWE-bench),gemini3.1,2,windowed-CQR (25 runs),0.8586162440911044,0.859375,0.9270465058701514,0.0
+model swap (SWE-bench),gpt5.2instant,2,windowed-CQR (100 prefixes),0.8948971820258949,0.609375,1.0609551542799907,0.0
+model swap (SWE-bench),gpt5.2instant,2,windowed-CQR (25 runs),0.8865194211728865,0.671875,1.0593610295042952,0.0
+model swap (SWE-bench),qwen3-235b,2,windowed-CQR (100 prefixes),0.6613728129205922,0.5166666666666667,0.5026700116340895,0.0
+model swap (SWE-bench),qwen3-235b,2,windowed-CQR (25 runs),0.8139973082099596,0.7333333333333333,0.6980981369345725,0.0
+model swap (SWE-bench),claude-sonnet4.6,3,windowed-CQR (100 prefixes),0.7082670906200318,0.734375,0.2000588947383767,0.0
+model swap (SWE-bench),claude-sonnet4.6,3,windowed-CQR (25 runs),0.8370429252782194,0.859375,1.047030861281652,0.0
+model swap (SWE-bench),gemini3.1,3,windowed-CQR (100 prefixes),0.660077352814783,0.5625,0.44231061917581127,0.0
+model swap (SWE-bench),gemini3.1,3,windowed-CQR (25 runs),0.8354103996562097,0.84375,0.8989436237807394,0.0
+model swap (SWE-bench),gpt5.2instant,3,windowed-CQR (100 prefixes),0.8964204112718964,0.59375,1.248738400142899,0.0
+model swap (SWE-bench),gpt5.2instant,3,windowed-CQR (25 runs),0.869002284843869,0.4375,1.2130128070047281,0.0
+model swap (SWE-bench),qwen3-235b,3,windowed-CQR (100 prefixes),0.6729475100942126,0.4,0.5633843682592374,0.0
+model swap (SWE-bench),qwen3-235b,3,windowed-CQR (25 runs),0.8067294751009422,0.6833333333333333,0.7561267767110798,0.0
+model swap (SWE-bench),claude-sonnet4.6,4,windowed-CQR (100 prefixes),0.7027027027027027,0.796875,0.17746890483885652,0.0
+model swap (SWE-bench),claude-sonnet4.6,4,windowed-CQR (25 runs),0.8577106518282989,0.890625,1.092880876976244,0.0
+model swap (SWE-bench),gemini3.1,4,windowed-CQR (100 prefixes),0.6617963042544048,0.640625,0.42338239186422444,0.0
+model swap (SWE-bench),gemini3.1,4,windowed-CQR (25 runs),0.8616244091104426,0.859375,0.9695434880500727,0.0
+model swap (SWE-bench),gpt5.2instant,4,windowed-CQR (100 prefixes),0.8781416603198782,0.609375,1.1026439242616997,0.0
+model swap (SWE-bench),gpt5.2instant,4,windowed-CQR (25 runs),0.8834729626808835,0.625,1.0870530110838093,0.0
+model swap (SWE-bench),qwen3-235b,4,windowed-CQR (100 prefixes),0.6573351278600269,0.4666666666666667,0.5295815687307804,0.0
+model swap (SWE-bench),qwen3-235b,4,windowed-CQR (25 runs),0.8250336473755047,0.7166666666666667,0.728855053179096,0.0

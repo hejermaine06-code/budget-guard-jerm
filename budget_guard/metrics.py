@@ -11,6 +11,20 @@ def marginal_coverage(y, lo, hi) -> float:
     return float(np.mean((lo <= y) & (y <= hi)))
 
 
+def rollout_coverage(y, lo, hi, groups) -> float:
+    """Fraction of rollouts whose interval contains y at EVERY prefix.
+
+    The object ``conformal.cqr_split_rollout`` guarantees; reported for every method
+    so pooled (per-prefix) and rollout-level calibration can be compared fairly.
+    """
+    covered = (np.asarray(lo) <= np.asarray(y)) & (np.asarray(y) <= np.asarray(hi))
+    groups = np.asarray(groups)
+    _, inverse = np.unique(groups, return_inverse=True)
+    all_covered = np.ones(inverse.max() + 1, dtype=bool)
+    np.logical_and.at(all_covered, inverse, covered)
+    return float(all_covered.mean())
+
+
 def mean_width(lo, hi) -> float:
     return float(np.mean(np.asarray(hi) - np.asarray(lo)))
 
